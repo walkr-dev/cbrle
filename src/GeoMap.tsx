@@ -82,6 +82,8 @@ export function GeoMap() {
     <div className="mapDiv" style={{width: "100%", height: "100%"}}>
         {allGeoJsonData && suburbToGuess && <Map
           tileComponent={showFullMap ? ImgTile : Blank}
+          /* this is dumb, looks like you can actually inline a string here in pigeon-maps...
+          // @ts-ignore */
           height={"60vh"}
           center={[suburbToGuessCentroid[0], suburbToGuessCentroid[1]]}
           defaultZoom={14}
@@ -127,3 +129,14 @@ const ImgTile: TileComponent = ({ tile, tileLoaded }) => (
     }}
   />
 );
+
+
+//TODO:
+// Hints 
+// distance?
+// wikipedia exerpt? (https://stackoverflow.com/questions/63345469/how-to-get-wikipedia-content-using-wikipedias-url)
+// show map for context
+// Lives
+// Only one per day (set up a list?)
+// win display
+// copy text to clipboard
