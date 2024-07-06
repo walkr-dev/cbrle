@@ -6,6 +6,8 @@ import {
   TileComponent
 } from "pigeon-maps";
 import { useEffect, useMemo, useState } from "react";
+import { Input } from "./components/ui/input";
+import { ScrollArea } from "@radix-ui/react-scroll-area";
 
 type Suburb = {
   name: string,
@@ -19,6 +21,9 @@ export function GeoMap() {
   const [allGeoJsonData, setGeoJsonData] = useState<FeatureCollection | undefined>(undefined);
   const [suburbToGuess, setSuburbToGuess] = useState<FeatureCollection | undefined>(undefined);
 
+  const [inputSuburb, setInputSuburb] = useState("");
+  const [inputFocused, setInputFocused] = useState(false);
+
   const suburbToGuessCentroid = useMemo(() => {
     let pos;
     if (suburbToGuess && suburbToGuess.features.length > 0) {
@@ -28,7 +33,26 @@ export function GeoMap() {
     else{
       return [-35.28, 149.128998];
     }
-  },[suburbToGuess])
+  },[suburbToGuess]);
+
+  const allSuburbs = useMemo(() => allGeoJsonData?.features.map(s => s.properties!.name), [allGeoJsonData]);
+
+  const filteredSuburbs = useMemo(() => allSuburbs?.filter((s: string) => s.toLocaleLowerCase().includes(inputSuburb.toLocaleLowerCase())), [allSuburbs, inputSuburb]);
+
+  function onKeyPress(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      tryGuess(inputSuburb);
+    }
+  }
+
+  function tryGuess(guess: string) {
+    if (inputSuburb.toLocaleLowerCase() === suburbToGuess?.features[0].properties!.name.toLocaleLowerCase()) {
+      console.log("you win!");
+    }
+    else {
+      console.log(`wrong!, answer was ${suburbToGuess?.features[0].properties!.name.toLocaleLowerCase()}, input was ${inputSuburb.toLocaleLowerCase()}`);
+    }
+  }
 
   useEffect(() => {
     fetch("/Suburbs.geojson")
@@ -46,10 +70,17 @@ export function GeoMap() {
   }, []);
 
   return (
+    <>
+    <Input className="m-2" value={inputSuburb} onFocus={(e) => setInputFocused(true)} onBlur={(e) => setInputFocused(false)} onChange={(e) => setInputSuburb(e.target.value)} onKeyDown={(e) => onKeyPress(e)} />
+    {inputSuburb.length > 1 && <ScrollArea className="h-12 w-full m-2">
+      <div className="p-4">
+      {filteredSuburbs && filteredSuburbs?.map(s => <div className="p-1 hover" key={s}>{s}</div>)}
+      </div>
+    </ScrollArea>}
     <div className="mapDiv" style={{width: "100%", height: "100%"}}>
         {allGeoJsonData && suburbToGuess && <Map
           tileComponent={showFullMap ? ImgTile : Blank}
-          height={"80vh"}
+          height={"60vh"}
           center={[suburbToGuessCentroid[0], suburbToGuessCentroid[1]]}
           defaultZoom={14}
           zoom={14}
@@ -66,6 +97,7 @@ export function GeoMap() {
             />
         </Map>}
     </div>
+    </>
   );
 }
 
