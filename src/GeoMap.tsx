@@ -52,6 +52,8 @@ export function GeoMap() {
     else {
       console.log(`wrong!, answer was ${suburbToGuess?.features[0].properties!.name.toLocaleLowerCase()}, input was ${inputSuburb.toLocaleLowerCase()}`);
     }
+    setInputFocused(false);
+    setInputSuburb("");
   }
 
   useEffect(() => {
@@ -71,7 +73,7 @@ export function GeoMap() {
 
   return (
     <>
-    <Input className="m-2" value={inputSuburb} onFocus={(e) => setInputFocused(true)} onBlur={(e) => setInputFocused(false)} onChange={(e) => setInputSuburb(e.target.value)} onKeyDown={(e) => onKeyPress(e)} />
+    <Input placeholder="Guess..." className="m-2" value={inputSuburb} onFocus={(e) => setInputFocused(true)} onBlur={(e) => setInputFocused(false)} onChange={(e) => setInputSuburb(e.target.value)} onKeyDown={(e) => onKeyPress(e)} />
     {inputSuburb.length > 1 && <ScrollArea className="h-12 w-full m-2">
       <div className="p-4">
       {filteredSuburbs && filteredSuburbs?.map(s => <div className="p-1 hover" key={s}>{s}</div>)}
