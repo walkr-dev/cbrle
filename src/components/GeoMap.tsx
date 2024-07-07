@@ -1,5 +1,5 @@
 import { ScrollArea } from "@radix-ui/react-scroll-area";
-import { centroid } from "@turf/turf";
+import { bearing, centroid, distance } from "@turf/turf";
 import { Feature, FeatureCollection, Geometry, Position } from "geojson";
 import {
   GeoJson,
@@ -13,7 +13,7 @@ import { Input } from "./ui/input";
 export function GeoMap() {
 
   //data
-  const [allGeoJsonData, setGeoJsonData] = useState<FeatureCollection | undefined>(undefined);
+  const [allGeoJsonData, setGeoJsonData] = useState<Feature[] | undefined>(undefined);
   const [suburbToGuess, setSuburbToGuess] = useState<Feature | undefined>(undefined);
   
   const suburbToGuessCentroid = useMemo(() => {
@@ -41,7 +41,7 @@ export function GeoMap() {
   const [inputSuburb, setInputSuburb] = useState("");
   const [inputFocused, setInputFocused] = useState(false);
   
-  const allSuburbs = useMemo(() => allGeoJsonData?.features.map(s => s.properties!.name), [allGeoJsonData]);
+  const allSuburbs = useMemo(() => allGeoJsonData?.map(s => s.properties!.name), [allGeoJsonData]);
   const filteredSuburbs = useMemo(() => allSuburbs?.filter((s: string) => s.toLocaleUpperCase().includes(inputSuburb.toLocaleUpperCase())), [allSuburbs, inputSuburb]);
 
 
@@ -49,7 +49,7 @@ export function GeoMap() {
     fetch("/Suburbs.geojson")
       .then((response) => response.json())
       .then((data: FeatureCollection) => {
-        setGeoJsonData(data);
+        setGeoJsonData(data.features);
         const selected = data.features.at(Math.floor(Math.random() * data.features.length -1));
         if (selected) {
           setSuburbToGuess(selected);
@@ -117,7 +117,7 @@ export function GeoMap() {
     </div> }
 
     <div>
-      {guesses.map((g, index) => <div key={index}>{g}</div>)}
+      {guesses.map((g, index) => <div key={index}>{g} - {getDistanceFromGuess(g, allGeoJsonData, suburbToGuess).toFixed(2)}km, {getDirectionFromGuess(g, allGeoJsonData, suburbToGuess)}</div>)}
     </div>
 
     {won &&  <div>Won in {guesses.length} guesses!</div>}
@@ -152,6 +152,36 @@ export function GeoMap() {
 
 function toFeatureCollection(feature: Feature) : FeatureCollection {
   return ({type: "FeatureCollection", features: [feature]})
+}
+
+function getDistanceFromGuess(guess: string, suburbFeatures: Feature[] | undefined, correctSuburb: Feature | undefined): number {
+  if (!suburbFeatures || !correctSuburb) return -1;
+  const guessFeature = suburbFeatures.find(f => f.properties!.name.toLocaleUpperCase() === guess);
+  if (!guessFeature) return -1;
+  return distance(centroid(correctSuburb.geometry).geometry, centroid(guessFeature.geometry).geometry);
+}
+
+function getDirectionFromGuess(guess: string, suburbFeatures: Feature[] | undefined, correctSuburb: Feature | undefined): string {
+  if (!suburbFeatures || !correctSuburb) return "???";
+  const guessFeature = suburbFeatures.find(f => f.properties!.name.toLocaleUpperCase() === guess);
+  if (!guessFeature) return "???";
+  const directionDecimalDegrees = bearing(centroid(guessFeature.geometry).geometry, centroid(correctSuburb.geometry).geometry);
+  return `${bearingToRoughDirection(directionDecimalDegrees)}- ${directionDecimalDegrees.toFixed(2)}`;
+}
+
+function bearingToRoughDirection(bearing: number) {
+  // -180(n?) to 180(s?), positive clockwise
+  
+  if (bearing > 0 && bearing <= 5) return "N"
+  if (bearing > 5 && bearing <= 45) return "NE"
+  if (bearing > 45 && bearing <= 90) return "E"
+  if (bearing > 90 && bearing <= 135) return "SE"
+  if (bearing > 135 && bearing <= 180) return "S"
+  if (bearing > -180 && bearing <= -135) return "SW"
+  if (bearing > -135 && bearing <= -90) return "W"
+  if (bearing > -90 && bearing <= 0) return "W"
+
+  else return "???"
 }
 
 function Blank() {
