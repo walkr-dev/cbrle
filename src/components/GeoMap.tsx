@@ -1,0 +1,191 @@
+import { ScrollArea } from "@radix-ui/react-scroll-area";
+import { centroid } from "@turf/turf";
+import { Feature, FeatureCollection, Geometry, Position } from "geojson";
+import {
+  GeoJson,
+  Map,
+  TileComponent
+} from "pigeon-maps";
+import { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
+import { Input } from "./ui/input";
+
+export function GeoMap() {
+
+  //data
+  const [allGeoJsonData, setGeoJsonData] = useState<FeatureCollection | undefined>(undefined);
+  const [suburbToGuess, setSuburbToGuess] = useState<Feature | undefined>(undefined);
+  
+  const suburbToGuessCentroid = useMemo(() => {
+    let pos;
+    if (suburbToGuess) {
+      pos = centroid(suburbToGuess.geometry).geometry.coordinates
+      return [pos[1], pos[0]];
+    }
+    else{
+      return [-35.28, 149.128998];
+    }
+  },[suburbToGuess]);
+
+  //state
+  const MAX_GUESSES = 6;
+  const [guesses, setGuesses] = useState<string[]>([]);
+
+  const [won, setHasWon] = useState(false);
+
+  const [lost, setHasLost] = useState(false);
+
+  const [showFullMap, setShowFullMap] = useState(true);
+  
+  //input related
+  const [inputSuburb, setInputSuburb] = useState("");
+  const [inputFocused, setInputFocused] = useState(false);
+  
+  const allSuburbs = useMemo(() => allGeoJsonData?.features.map(s => s.properties!.name), [allGeoJsonData]);
+  const filteredSuburbs = useMemo(() => allSuburbs?.filter((s: string) => s.toLocaleUpperCase().includes(inputSuburb.toLocaleUpperCase())), [allSuburbs, inputSuburb]);
+
+
+  useEffect(() => {
+    fetch("/Suburbs.geojson")
+      .then((response) => response.json())
+      .then((data: FeatureCollection) => {
+        setGeoJsonData(data);
+        const selected = data.features.at(Math.floor(Math.random() * data.features.length -1));
+        if (selected) {
+          setSuburbToGuess(selected);
+        }
+
+      });
+  }, []);
+
+  function onKeyPress(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      tryGuess(inputSuburb.toLocaleUpperCase());
+    }
+  }
+
+  function tryGuess(guess: string) {
+
+    if (!allSuburbs?.map(a => a.toLocaleUpperCase()).includes(guess)) {
+      toast.error("Invalid suburb!");
+      return;
+    }
+
+    if (guesses.includes(guess))
+    {
+      toast("Already guessed!");
+      return;
+    }
+
+    setGuesses([...guesses, guess]);
+    setInputFocused(false);
+    setInputSuburb("");
+
+    const isCorrectGuess = guess === suburbToGuess?.properties!.name.toLocaleUpperCase()
+    
+    if (isCorrectGuess) {
+      onWin();
+    }
+    else {
+      if (guesses.length > MAX_GUESSES) {
+        onLose();
+      }
+      // show distance from guess to actual
+      // show direction
+    }
+
+  }
+
+  function onWin() {
+    setHasWon(true);
+  }
+
+  function onLose() {
+    setHasLost(true);
+    // show what correct answer was
+  }
+
+  return (
+    <>
+    {!won && !lost && <div>
+      <Input placeholder="Guess..." className="m-2" value={inputSuburb} onFocus={(e) => setInputFocused(true)} onBlur={(e) => setInputFocused(false)} onChange={(e) => setInputSuburb(e.target.value)} onKeyDown={(e) => onKeyPress(e)} />
+      {inputSuburb.length > 1 && <ScrollArea className="h-12 w-full m-2">
+        <div className="p-4">
+        {filteredSuburbs && filteredSuburbs?.map(s => <div className="p-1 hover" key={s}>{s}</div>)}
+        </div>
+      </ScrollArea>}
+    </div> }
+
+    <div>
+      {guesses.map((g, index) => <div key={index}>{g}</div>)}
+    </div>
+
+    {won &&  <div>Won in {guesses.length} guesses!</div>}
+
+    {lost && <div>Lost! It was: {suburbToGuess?.properties!.name}</div>}
+
+    <div className="mapDiv" style={{width: "100%", height: "100%"}}>
+        {allGeoJsonData && suburbToGuess && <Map
+          tileComponent={showFullMap ? ImgTile : Blank}
+          /* this is dumb, looks like you can actually inline a string here in pigeon-maps...
+          // @ts-ignore */
+          height={"60vh"}
+          center={[suburbToGuessCentroid[0], suburbToGuessCentroid[1]]}
+          defaultZoom={13}
+          zoom={13}
+          mouseEvents={false}
+          touchEvents={false}
+        >
+            <GeoJson
+              data={toFeatureCollection(suburbToGuess)}
+              styleCallback={(feature: Feature, hover: boolean) => 
+                hover
+                  ? { fill: "#00ceff", strokeWidth: "4", stroke: "white", strokeDasharray: "5, 5"}
+                  : { fill: "#00c9f9", strokeWidth: "4", stroke: "white", strokeDasharray: "5, 5"}
+              }
+            />
+        </Map>}
+    </div>
+    </>
+  );
+}
+
+function toFeatureCollection(feature: Feature) : FeatureCollection {
+  return ({type: "FeatureCollection", features: [feature]})
+}
+
+function Blank() {
+  return <></>;
+}
+
+const ImgTile: TileComponent = ({ tile, tileLoaded }) => (
+  // eslint-disable-next-line @next/next/no-img-element
+  <img
+    src={tile.url}
+    srcSet={tile.srcSet}
+    width={tile.width}
+    height={tile.height}
+    loading={"lazy"}
+    onLoad={tileLoaded}
+    alt={""}
+    style={{
+      position: "absolute",
+      left: tile.left,
+      top: tile.top,
+      willChange: "transform",
+      transformOrigin: "top left",
+      opacity: 1,
+    }}
+  />
+);
+
+
+//TODO:
+// Hints 
+// distance?
+// wikipedia exerpt? (https://stackoverflow.com/questions/63345469/how-to-get-wikipedia-content-using-wikipedias-url)
+// show map for context
+// Lives
+// Only one per day (set up a list?)
+// win display
+// copy text to clipboard
