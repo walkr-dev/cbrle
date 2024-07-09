@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
+import { Button } from "./ui/button";
 
 export function GeoMap() {
 
@@ -82,7 +83,7 @@ export function GeoMap() {
     }
 
     if (guesses.includes(guess)) {
-      toast("Already guessed!");
+      toast.error("Already guessed!");
       return;
     }
 
@@ -100,8 +101,6 @@ export function GeoMap() {
       if (currentGuesses.length >= MAX_GUESSES) {
         onLose();
       }
-      // show distance from guess to actual
-      // show direction
     }
 
   }
@@ -118,16 +117,16 @@ export function GeoMap() {
   return (
     <>
       {!won && !lost && <div>
-        <Input placeholder="Guess..." className="m-2" value={inputSuburb} onFocus={(e) => setInputFocused(true)} onBlur={(e) => setInputFocused(false)} onChange={(e) => setInputSuburb(e.target.value)} onKeyDown={(e) => onKeyPress(e)} />
+        <Input placeholder="Guess..." className="mb-2" value={inputSuburb} onFocus={(e) => setInputFocused(true)} onBlur={(e) => setInputFocused(false)} onChange={(e) => setInputSuburb(e.target.value)} onKeyDown={(e) => onKeyPress(e)} />
+        <Button onClick={() => tryGuess(inputSuburb)}>Guess {guesses.length} / {MAX_GUESSES}</Button>
         {inputSuburb.length > 0 && <ScrollArea className="h-20 mb-2 w-full">
           {filteredSuburbs && filteredSuburbs?.map(s => <div className="p-2 transition-colors hover:bg-slate-200" onClick={() => tryGuess(s)} key={s}>{s}</div>)}
         </ScrollArea>}
       </div>}
 
       <div className="mb-2">
-        <div>Guess {guesses.length} / {MAX_GUESSES}</div>
         {guesses.map((g, index) => 
-          <div key={index}>{isCorrectGuess(g, suburbToGuess?.properties!.name) ? "✅" : "❌"} {g} - {getDistanceFromGuess(g, allGeoJsonData, suburbToGuess).toFixed(2)}km, {getDirectionFromGuess(g, allGeoJsonData, suburbToGuess)}</div>
+          <div key={index}>{isCorrectGuess(g, suburbToGuess?.properties!.name) ? "✅" : "❌"} {g} {getDistanceFromGuess(g, allGeoJsonData, suburbToGuess).toFixed(2)}km, {getDirectionFromGuess(g, allGeoJsonData, suburbToGuess)}</div>
         )}
       </div>
 
