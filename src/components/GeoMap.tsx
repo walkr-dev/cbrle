@@ -1,6 +1,5 @@
-import { ScrollArea } from "@radix-ui/react-scroll-area";
 import { bearing, centroid, distance } from "@turf/turf";
-import { Feature, FeatureCollection, Geometry, Position } from "geojson";
+import { Feature, FeatureCollection } from "geojson";
 import {
   GeoJson,
   Map,
@@ -9,23 +8,24 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { Input } from "./ui/input";
+import { ScrollArea } from "./ui/scroll-area";
 
 export function GeoMap() {
 
   //data
   const [allGeoJsonData, setGeoJsonData] = useState<Feature[] | undefined>(undefined);
   const [suburbToGuess, setSuburbToGuess] = useState<Feature | undefined>(undefined);
-  
+
   const suburbToGuessCentroid = useMemo(() => {
     let pos;
     if (suburbToGuess) {
       pos = centroid(suburbToGuess.geometry).geometry.coordinates
       return [pos[1], pos[0]];
     }
-    else{
+    else {
       return [-35.28, 149.128998];
     }
-  },[suburbToGuess]);
+  }, [suburbToGuess]);
 
   //state
   const MAX_GUESSES = 6;
@@ -36,13 +36,18 @@ export function GeoMap() {
   const [lost, setHasLost] = useState(false);
 
   const [showFullMap, setShowFullMap] = useState(true);
-  
+
   //input related
   const [inputSuburb, setInputSuburb] = useState("");
   const [inputFocused, setInputFocused] = useState(false);
-  
+
   const allSuburbs = useMemo(() => allGeoJsonData?.map(s => s.properties!.name), [allGeoJsonData]);
-  const filteredSuburbs = useMemo(() => allSuburbs?.filter((s: string) => s.toLocaleUpperCase().includes(inputSuburb.toLocaleUpperCase())), [allSuburbs, inputSuburb]);
+  const filteredSuburbs = useMemo(() => {
+      if (inputSuburb.length === 0) return [];
+      return allSuburbs?.filter((s: string) => s.toLocaleUpperCase().includes(inputSuburb.toLocaleUpperCase()))
+    },
+    [allSuburbs, inputSuburb]
+  );
 
 
   useEffect(() => {
@@ -50,7 +55,7 @@ export function GeoMap() {
       .then((response) => response.json())
       .then((data: FeatureCollection) => {
         setGeoJsonData(data.features);
-        const selected = data.features.at(Math.floor(Math.random() * data.features.length -1));
+        const selected = data.features.at(Math.floor(Math.random() * data.features.length - 1));
         if (selected) {
           setSuburbToGuess(selected);
         }
@@ -60,19 +65,19 @@ export function GeoMap() {
 
   function onKeyPress(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter") {
-      tryGuess(inputSuburb.toLocaleUpperCase());
+      tryGuess(inputSuburb);
     }
   }
 
-  function tryGuess(guess: string) {
+  function tryGuess(inputGuess: string) {
+    const guess = inputGuess.toLocaleUpperCase();
 
     if (!allSuburbs?.map(a => a.toLocaleUpperCase()).includes(guess)) {
       toast.error("Invalid suburb!");
       return;
     }
 
-    if (guesses.includes(guess))
-    {
+    if (guesses.includes(guess)) {
       toast("Already guessed!");
       return;
     }
@@ -82,7 +87,7 @@ export function GeoMap() {
     setInputSuburb("");
 
     const isCorrectGuess = guess === suburbToGuess?.properties!.name.toLocaleUpperCase()
-    
+
     if (isCorrectGuess) {
       onWin();
     }
@@ -107,51 +112,51 @@ export function GeoMap() {
 
   return (
     <>
-    {!won && !lost && <div>
-      <Input placeholder="Guess..." className="m-2" value={inputSuburb} onFocus={(e) => setInputFocused(true)} onBlur={(e) => setInputFocused(false)} onChange={(e) => setInputSuburb(e.target.value)} onKeyDown={(e) => onKeyPress(e)} />
-      {inputSuburb.length > 1 && <ScrollArea className="h-12 w-full m-2">
-        <div className="p-4">
-        {filteredSuburbs && filteredSuburbs?.map(s => <div className="p-1 hover" key={s}>{s}</div>)}
-        </div>
-      </ScrollArea>}
-    </div> }
+      {!won && !lost && <div>
+        <Input placeholder="Guess..." className="m-2" value={inputSuburb} onFocus={(e) => setInputFocused(true)} onBlur={(e) => setInputFocused(false)} onChange={(e) => setInputSuburb(e.target.value)} onKeyDown={(e) => onKeyPress(e)} />
+        <ScrollArea className="h-20 mb-2">
+          {filteredSuburbs && filteredSuburbs?.map(s => <div className="p-2 transition-colors hover:bg-slate-200" onClick={() => tryGuess(s)} key={s}>{s}</div>)}
+        </ScrollArea>
+      </div>}
 
-    <div>
-      {guesses.map((g, index) => <div key={index}>{g} - {getDistanceFromGuess(g, allGeoJsonData, suburbToGuess).toFixed(2)}km, {getDirectionFromGuess(g, allGeoJsonData, suburbToGuess)}</div>)}
-    </div>
+      <div>
+        {guesses.map((g, index) => 
+          <div key={index}>{g} - {getDistanceFromGuess(g, allGeoJsonData, suburbToGuess).toFixed(2)}km, {getDirectionFromGuess(g, allGeoJsonData, suburbToGuess)}</div>
+        )}
+      </div>
 
-    {won &&  <div>Won in {guesses.length} guesses!</div>}
+      {won && <div>Won in {guesses.length} guesses!</div>}
 
-    {lost && <div>Lost! It was: {suburbToGuess?.properties!.name}</div>}
+      {lost && <div>Lost! It was: {suburbToGuess?.properties!.name}</div>}
 
-    <div className="mapDiv" style={{width: "100%", height: "100%"}}>
+      <div className="mapDiv" style={{ width: "100%", height: "100%" }}>
         {allGeoJsonData && suburbToGuess && <Map
           tileComponent={showFullMap ? ImgTile : Blank}
           /* this is dumb, looks like you can actually inline a string here in pigeon-maps...
           // @ts-ignore */
-          height={"60vh"}
+          height={"55vh"}
           center={[suburbToGuessCentroid[0], suburbToGuessCentroid[1]]}
           defaultZoom={13}
           zoom={13}
           mouseEvents={false}
           touchEvents={false}
         >
-            <GeoJson
-              data={toFeatureCollection(suburbToGuess)}
-              styleCallback={(feature: Feature, hover: boolean) => 
-                hover
-                  ? { fill: "#00ceff", strokeWidth: "4", stroke: "white", strokeDasharray: "5, 5"}
-                  : { fill: "#00c9f9", strokeWidth: "4", stroke: "white", strokeDasharray: "5, 5"}
-              }
-            />
+          <GeoJson
+            data={toFeatureCollection(suburbToGuess)}
+            styleCallback={(feature: Feature, hover: boolean) =>
+              hover
+                ? { fill: "#00ceff", strokeWidth: "4", stroke: "white", strokeDasharray: "5, 5" }
+                : { fill: "#00c9f9", strokeWidth: "4", stroke: "white", strokeDasharray: "5, 5" }
+            }
+          />
         </Map>}
-    </div>
+      </div>
     </>
   );
 }
 
-function toFeatureCollection(feature: Feature) : FeatureCollection {
-  return ({type: "FeatureCollection", features: [feature]})
+function toFeatureCollection(feature: Feature): FeatureCollection {
+  return ({ type: "FeatureCollection", features: [feature] })
 }
 
 function getDistanceFromGuess(guess: string, suburbFeatures: Feature[] | undefined, correctSuburb: Feature | undefined): number {
@@ -171,7 +176,7 @@ function getDirectionFromGuess(guess: string, suburbFeatures: Feature[] | undefi
 
 function bearingToRoughDirection(bearing: number) {
   // -180(n?) to 180(s?), positive clockwise
-  
+
   if (bearing > 0 && bearing <= 5) return "N"
   if (bearing > 5 && bearing <= 45) return "NE"
   if (bearing > 45 && bearing <= 90) return "E"
