@@ -28,7 +28,7 @@ export function GeoMap() {
   }, [suburbToGuess]);
 
   //state
-  const MAX_GUESSES = 6;
+  const MAX_GUESSES = 5;
   const [guesses, setGuesses] = useState<string[]>([]);
 
   const [won, setHasWon] = useState(false);
@@ -69,6 +69,10 @@ export function GeoMap() {
     }
   }
 
+  function isCorrectGuess(guess: string, suburbToGuess: string): boolean {
+    return guess.toLocaleUpperCase() === suburbToGuess.toLocaleUpperCase();
+  }
+
   function tryGuess(inputGuess: string) {
     const guess = inputGuess.toLocaleUpperCase();
 
@@ -82,17 +86,18 @@ export function GeoMap() {
       return;
     }
 
-    setGuesses([...guesses, guess]);
+    const currentGuesses = [...guesses, guess];
+
+    setGuesses(currentGuesses);
     setInputFocused(false);
     setInputSuburb("");
 
-    const isCorrectGuess = guess === suburbToGuess?.properties!.name.toLocaleUpperCase()
 
-    if (isCorrectGuess) {
+    if (isCorrectGuess(guess, suburbToGuess?.properties!.name)) {
       onWin();
     }
     else {
-      if (guesses.length > MAX_GUESSES) {
+      if (currentGuesses.length >= MAX_GUESSES) {
         onLose();
       }
       // show distance from guess to actual
@@ -114,14 +119,15 @@ export function GeoMap() {
     <>
       {!won && !lost && <div>
         <Input placeholder="Guess..." className="m-2" value={inputSuburb} onFocus={(e) => setInputFocused(true)} onBlur={(e) => setInputFocused(false)} onChange={(e) => setInputSuburb(e.target.value)} onKeyDown={(e) => onKeyPress(e)} />
-        <ScrollArea className="h-20 mb-2">
+        {inputSuburb.length > 0 && <ScrollArea className="h-20 mb-2 w-full">
           {filteredSuburbs && filteredSuburbs?.map(s => <div className="p-2 transition-colors hover:bg-slate-200" onClick={() => tryGuess(s)} key={s}>{s}</div>)}
-        </ScrollArea>
+        </ScrollArea>}
       </div>}
 
-      <div>
+      <div className="mb-2">
+        <div>Guess {guesses.length} / {MAX_GUESSES}</div>
         {guesses.map((g, index) => 
-          <div key={index}>{g} - {getDistanceFromGuess(g, allGeoJsonData, suburbToGuess).toFixed(2)}km, {getDirectionFromGuess(g, allGeoJsonData, suburbToGuess)}</div>
+          <div key={index}>{isCorrectGuess(g, suburbToGuess?.properties!.name) ? "✅" : "❌"} {g} - {getDistanceFromGuess(g, allGeoJsonData, suburbToGuess).toFixed(2)}km, {getDirectionFromGuess(g, allGeoJsonData, suburbToGuess)}</div>
         )}
       </div>
 
@@ -143,7 +149,7 @@ export function GeoMap() {
         >
           <GeoJson
             data={toFeatureCollection(suburbToGuess)}
-            styleCallback={(feature: Feature, hover: boolean) =>
+            styleCallback={(_: Feature, hover: boolean) =>
               hover
                 ? { fill: "#00ceff", strokeWidth: "4", stroke: "white", strokeDasharray: "5, 5" }
                 : { fill: "#00c9f9", strokeWidth: "4", stroke: "white", strokeDasharray: "5, 5" }
@@ -171,7 +177,7 @@ function getDirectionFromGuess(guess: string, suburbFeatures: Feature[] | undefi
   const guessFeature = suburbFeatures.find(f => f.properties!.name.toLocaleUpperCase() === guess);
   if (!guessFeature) return "???";
   const directionDecimalDegrees = bearing(centroid(guessFeature.geometry).geometry, centroid(correctSuburb.geometry).geometry);
-  return `${bearingToRoughDirection(directionDecimalDegrees)}- ${directionDecimalDegrees.toFixed(2)}`;
+  return `${bearingToRoughDirection(directionDecimalDegrees)}`;
 }
 
 function bearingToRoughDirection(bearing: number) {
@@ -217,10 +223,13 @@ const ImgTile: TileComponent = ({ tile, tileLoaded }) => (
 
 //TODO:
 // Hints 
+// 1 - show map (?)
+// 2 - amount of vowels?
+// 3 - amount of letters?
+// 
 // distance?
 // wikipedia exerpt? (https://stackoverflow.com/questions/63345469/how-to-get-wikipedia-content-using-wikipedias-url)
-// show map for context
-// Lives
 // Only one per day (set up a list?)
 // win display
+// loss display
 // copy text to clipboard
