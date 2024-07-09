@@ -183,14 +183,14 @@ function getDirectionFromGuess(guess: string, suburbFeatures: Feature[] | undefi
 function bearingToRoughDirection(bearing: number) {
   // -180(n?) to 180(s?), positive clockwise
 
-  if (bearing > 0 && bearing <= 5) return "N"
-  if (bearing > 5 && bearing <= 45) return "NE"
-  if (bearing > 45 && bearing <= 90) return "E"
-  if (bearing > 90 && bearing <= 135) return "SE"
-  if (bearing > 135 && bearing <= 180) return "S"
-  if (bearing > -180 && bearing <= -135) return "SW"
-  if (bearing > -135 && bearing <= -90) return "W"
-  if (bearing > -90 && bearing <= 0) return "W"
+  if (bearing > -10 && bearing <= 10) return "N"
+  if (bearing > 10 && bearing <= 55) return "NE"
+  if (bearing > 55 && bearing <= 100) return "E"
+  if (bearing > 100 && bearing <= 145) return "SE"
+  if (bearing > 145 && bearing <= 190) return "S"
+  if (bearing > -190 && bearing <= -125) return "SW"
+  if (bearing > -125 && bearing <= -80) return "W"
+  if (bearing > -80 && bearing <= -10) return "W"
 
   else return "???"
 }
