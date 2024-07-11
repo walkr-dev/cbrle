@@ -94,7 +94,6 @@ export function GeoMap() {
     setInputFocused(false);
     setInputSuburb("");
 
-
     if (isCorrectGuess(guess, suburbToGuess?.properties!.name)) {
       onWin();
     }
@@ -241,7 +240,4 @@ const ImgTile: TileComponent = ({ tile, tileLoaded }) => (
 // 
 // distance?
 // wikipedia exerpt? (https://stackoverflow.com/questions/63345469/how-to-get-wikipedia-content-using-wikipedias-url)
-// Only one per day (set up a list?)
-// win display
-// loss display
 // copy text to clipboard
