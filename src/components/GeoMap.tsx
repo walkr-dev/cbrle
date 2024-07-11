@@ -117,14 +117,16 @@ export function GeoMap() {
   return (
     <>
       {!won && !lost && <div>
-        <Input placeholder="Guess..." className="mb-2" value={inputSuburb} onFocus={(e) => setInputFocused(true)} onBlur={(e) => setInputFocused(false)} onChange={(e) => setInputSuburb(e.target.value)} onKeyDown={(e) => onKeyPress(e)} />
-        <Button onClick={() => tryGuess(inputSuburb)}>Guess {guesses.length} / {MAX_GUESSES}</Button>
+        <div className="flex w-full max-w-sm items-center space-x-2">
+          <Input placeholder="Guess..." value={inputSuburb} onChange={(e) => setInputSuburb(e.target.value)} onKeyDown={(e) => onKeyPress(e)} />
+          <Button onClick={() => tryGuess(inputSuburb)}>Guess {guesses.length} / {MAX_GUESSES}</Button>
+        </div>
         {inputSuburb.length > 0 && <ScrollArea className="h-20 mb-2 w-full">
           {filteredSuburbs && filteredSuburbs?.map(s => <div className="p-2 transition-colors hover:bg-slate-200" onClick={() => tryGuess(s)} key={s}>{s}</div>)}
         </ScrollArea>}
       </div>}
 
-      <div className="mb-2">
+      <div className="my-2">
         {guesses.map((g, index) => 
           <div key={index}>{isCorrectGuess(g, suburbToGuess?.properties!.name) ? "✅" : "❌"} {g} {getDistanceFromGuess(g, allGeoJsonData, suburbToGuess).toFixed(2)}km, {getDirectionFromGuess(g, allGeoJsonData, suburbToGuess)}</div>
         )}

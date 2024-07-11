@@ -11,8 +11,8 @@ export default function Home() {
       className={`flex min-h-screen flex-col items-center justify-center p-8 ${inter.className}`}
     >
       <Toaster />
-      <h1 className="text-4xl">CBRLE</h1>
-      <h4>Guess the suburb!</h4>
+      <h1 className="text-5xl font-bold">CBRLE</h1>
+      <h4 className="mb-2">Guess the suburb!</h4>
       <GeoMap />
     </main>
   );
