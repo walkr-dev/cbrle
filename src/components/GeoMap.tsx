@@ -117,7 +117,7 @@ export function GeoMap() {
 
   function getTodaysGuessFromList(list: string[]) {
     const today = new Date();
-    const startDate = new Date(2024, 6, 10);
+    const startDate = new Date(2024, 6, 11);
 
     const timeDifference = today.getTime() - startDate.getTime();
     const daysSinceStart = Math.floor(timeDifference / (1000 * 3600 * 24));
