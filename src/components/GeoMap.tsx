@@ -10,6 +10,7 @@ import toast from "react-hot-toast";
 import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
 import { Button } from "./ui/button";
+import { guessList } from "./List";
 
 export function GeoMap() {
 
@@ -56,7 +57,7 @@ export function GeoMap() {
       .then((response) => response.json())
       .then((data: FeatureCollection) => {
         setGeoJsonData(data.features);
-        const selected = data.features.at(Math.floor(Math.random() * data.features.length - 1));
+        const selected = data.features.find(f => getTodaysGuessFromList(guessList) === f.properties!.name);
         if (selected) {
           setSuburbToGuess(selected);
         }
@@ -112,6 +113,16 @@ export function GeoMap() {
   function onLose() {
     setHasLost(true);
     // show what correct answer was
+  }
+
+  function getTodaysGuessFromList(list: string[]) {
+    const today = new Date();
+    const startDate = new Date(2024, 6, 10);
+
+    const timeDifference = today.getTime() - startDate.getTime();
+    const daysSinceStart = Math.floor(timeDifference / (1000 * 3600 * 24));
+
+    return list[daysSinceStart % list.length];
   }
 
   return (
