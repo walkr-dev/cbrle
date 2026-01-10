@@ -10,7 +10,7 @@ import toast from "react-hot-toast";
 import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
 import { Button } from "./ui/button";
-import { guessList } from "./List";
+import { guessList, Suburb } from "./List";
 
 export function GeoMap() {
 
@@ -51,13 +51,15 @@ export function GeoMap() {
     [allSuburbs, inputSuburb]
   );
 
+  const todayGuess = useMemo(() => getTodaysGuessFromList(guessList), []);
+
 
   useEffect(() => {
     fetch("/Suburbs.geojson")
       .then((response) => response.json())
       .then((data: FeatureCollection) => {
         setGeoJsonData(data.features);
-        const selected = data.features.find(f => getTodaysGuessFromList(guessList) === f.properties!.name);
+        const selected = data.features.find(f => todayGuess.name === f.properties!.name);
         if (selected) {
           setSuburbToGuess(selected);
         }
@@ -114,7 +116,7 @@ export function GeoMap() {
     // show what correct answer was
   }
 
-  function getTodaysGuessFromList(list: string[]) {
+  function getTodaysGuessFromList(list: Suburb[]): Suburb {
     const today = new Date();
     const startDate = new Date(2024, 6, 11);
 
@@ -122,6 +124,12 @@ export function GeoMap() {
     const daysSinceStart = Math.floor(timeDifference / (1000 * 3600 * 24));
 
     return list[daysSinceStart % list.length];
+  }
+
+  const getLetterHint = (name: string): string => {
+      const first = name.charAt(0).toUpperCase();
+      const last = name.charAt(name.length - 1).toUpperCase();
+      return `Starts with ${first}, ends with ${last}`;
   }
 
   return (
@@ -140,6 +148,9 @@ export function GeoMap() {
         {guesses.map((g, index) => 
           <div key={index}>{isCorrectGuess(g, suburbToGuess?.properties!.name) ? "✅" : "❌"} {g} {getDistanceFromGuess(g, allGeoJsonData, suburbToGuess).toFixed(2)}km, {getDirectionFromGuess(g, allGeoJsonData, suburbToGuess)}</div>
         )}
+        {guesses.length > 0 && <div>Hint: {todayGuess.hint}</div>}
+        {guesses.length > 1 && <div>Hint: {todayGuess.letters} letters </div>}
+        {guesses.length > 3 && <div>Hint: {getLetterHint(todayGuess.name)}</div>}
       </div>
 
       {won && <div>Won in {guesses.length} guesses!</div>}
