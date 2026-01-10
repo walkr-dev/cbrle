@@ -1,4 +1,3 @@
-// ...existing code...
 export type Suburb = {
     name: string;
     hint: string;
