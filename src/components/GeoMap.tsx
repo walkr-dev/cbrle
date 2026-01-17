@@ -178,14 +178,14 @@ export function GeoMap() {
               styleCallback={(_: Feature, hover: boolean) =>
                 hover
                   ? {
-                      fill: "#00ceff",
-                      strokeWidth: "4",
+                      fill: "#eee10f",
+                      strokeWidth: "2",
                       stroke: "white",
                       strokeDasharray: "5, 5",
                     }
                   : {
-                      fill: "#00c9f9",
-                      strokeWidth: "4",
+                      fill: "#e5de5b",
+                      strokeWidth: "2",
                       stroke: "white",
                       strokeDasharray: "5, 5",
                     }
@@ -258,59 +258,12 @@ function handleShare(won: boolean, guessCount: number, maxGuesses: number, subur
   }
 }
 
-function getDistanceFromGuess(
-  guess: string,
-  suburbFeatures: Feature[] | undefined,
-  correctSuburb: Feature | undefined,
-): number {
-  if (!suburbFeatures || !correctSuburb) return -1;
-  const guessFeature = suburbFeatures.find(
-    (f) => f.properties!.name.toLocaleUpperCase() === guess,
-  );
-  if (!guessFeature) return -1;
-  return distance(
-    centroid(correctSuburb.geometry).geometry,
-    centroid(guessFeature.geometry).geometry,
-  );
-}
-
 function getGuessBlurb(guessCount: number): string {
   if (guessCount === 1) return "Local legend!";
   if (guessCount <= 2) return "Well done!";
   if (guessCount <= 3) return "Not bad!";
   if (guessCount === 5) return "Close one!";
   return "";
-}
-
-function getDirectionFromGuess(
-  guess: string,
-  suburbFeatures: Feature[] | undefined,
-  correctSuburb: Feature | undefined,
-): string {
-  if (!suburbFeatures || !correctSuburb) return "???";
-  const guessFeature = suburbFeatures.find(
-    (f) => f.properties!.name.toLocaleUpperCase() === guess,
-  );
-  if (!guessFeature) return "???";
-  const directionDecimalDegrees = bearing(
-    centroid(guessFeature.geometry).geometry,
-    centroid(correctSuburb.geometry).geometry,
-  );
-  return `${bearingToRoughDirection(directionDecimalDegrees)}`;
-}
-
-function bearingToRoughDirection(bearing: number) {
-  // -180(n?) to 180(s?), positive clockwise
-
-  if (bearing > -10 && bearing <= 10) return "N";
-  if (bearing > 10 && bearing <= 55) return "NE";
-  if (bearing > 55 && bearing <= 100) return "E";
-  if (bearing > 100 && bearing <= 145) return "SE";
-  if (bearing > 145 && bearing <= 190) return "S";
-  if (bearing > -190 && bearing <= -125) return "SW";
-  if (bearing > -125 && bearing <= -80) return "W";
-  if (bearing > -80 && bearing <= -10) return "W";
-  else return "???";
 }
 
 function Blank() {
