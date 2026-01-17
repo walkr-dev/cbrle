@@ -166,7 +166,7 @@ export function GeoMap() {
             tileComponent={showFullMap ? ImgTile : Blank}
             /* this is dumb, looks like you can actually inline a string here in pigeon-maps...
           // @ts-ignore */
-            height={"60vh"}
+            height={"45vh"}
             center={[suburbToGuessCentroid[0], suburbToGuessCentroid[1]]}
             defaultZoom={13}
             zoom={13}
